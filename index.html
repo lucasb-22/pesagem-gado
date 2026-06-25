@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pesagem Gado">
+<title>Pesagem de Gado</title>
+<style>
+:root {
+  --navy:      #002366;
+  --navy-dark: #001233;
+  --navy-mid:  #00337A;
+  --accent:    #4D9FFF;
+  --accent-dim:#1A6FCC;
+  --white:     #FFFFFF;
+  --text-dim:  #7A93C8;
+  --text-sub:  #4A6099;
+  --border:    rgba(255,255,255,0.09);
+  --surface:   rgba(255,255,255,0.05);
+  --surface2:  rgba(255,255,255,0.08);
+  --danger:    #D42B00;
+  --success:   #00843D;
+  --r:         14px;
+  --r-sm:      9px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--navy-dark);
+  color: var(--white);
+  overflow-x: hidden;
+}
+body { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── HEADER ── */
+header {
+  background: var(--navy);
+  padding: 12px 20px 11px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.hdr-left { display: flex; align-items: center; gap: 10px; }
+.hdr-icon { font-size: 24px; line-height: 1; }
+.hdr-title { font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+.hdr-date  { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+.hdr-badge { font-size: 12px; font-weight: 700; color: var(--accent); background: rgba(77,159,255,.12); padding: 4px 10px; border-radius: 20px; }
+
+/* ── NAV ── */
+nav {
+  background: var(--navy);
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1; padding: 10px 4px 9px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: color .15s;
+}
+.tab .ti { font-size: 19px; line-height: 1; }
+.tab.on  { color: var(--white); position: relative; }
+.tab.on::after {
+  content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+  height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; flex: 1; padding: 14px 14px 20px; flex-direction: column; gap: 12px; }
+.screen.on { display: flex; animation: up .18s ease; }
+@keyframes up { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── CARD ── */
+.card {
+  background: var(--navy);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+}
+.card-hd {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.1px; color: var(--text-sub); margin-bottom: 13px;
+}
+
+/* ── INPUTS ── */
+.ig { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.ig:last-child { margin-bottom: 0; }
+.ig-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .6px; }
+
+input.big {
+  width: 100%; background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--white); font-size: 40px; font-weight: 800;
+  padding: 13px 16px; text-align: center;
+  -webkit-appearance: none; appearance: none; outline: none;
+  transition: border-color .15s, background .15s;
+  letter-spacing: 1px;
+}
+input.big.sm { font-size: 28px; padding: 11px 14px; }
+input.big:focus { border-color: var(--accent); background: rgba(77,159,255,.08); }
+input.big::placeholder { color: rgba(255,255,255,.2); font-size: 22px; font-weight: 400; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ── STATS STRIP ── */
+.strip {
+  display: flex; align-items: center; justify-content: space-around;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 11px 8px;
+}
+.st { text-align: center; flex: 1; }
+.st-n { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1; }
+.st-l { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .7px; margin-top: 3px; }
+.st-div { width: 1px; height: 32px; background: var(--border); }
+
+/* ── LOT BUTTONS ── */
+.lot-grid { display: grid; gap: 10px; }
+.lot-grid.c1 { grid-template-columns: 1fr; }
+.lot-grid.c2 { grid-template-columns: 1fr 1fr; }
+.lot-grid.c3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.lot-btn {
+  padding: 18px 10px; border: none; border-radius: 12px;
+  color: #fff; font-size: 16px; font-weight: 800;
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  min-height: 80px; position: relative; overflow: hidden;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35);
+  transition: transform .1s;
+}
+.lot-btn:active { transform: scale(.95); }
+.lot-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0); transition: background .1s;
+}
+.lot-btn:active::after { background: rgba(255,255,255,.12); }
+.lot-btn .lc { font-size: 11px; font-weight: 500; opacity: .8; margin-top: 1px; }
+
+/* lot colour palette — assigned by index in JS */
+/* ── SETTINGS ── */
+.s-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.s-row:last-child { border-bottom: none; padding-bottom: 0; }
+.s-lbl { font-size: 15px; font-weight: 600; }
+.s-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+/* Stepper */
+.stepper { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.stepper-v { font-size: 22px; font-weight: 800; color: var(--accent); min-width: 28px; text-align: center; }
+.stepper-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: var(--surface2);
+  color: var(--white); font-size: 20px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.stepper-btn:active { background: var(--surface); }
+
+/* Lot manager list */
+.lot-mgr { display: flex; flex-direction: column; gap: 8px; }
+.lot-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  transition: opacity .15s;
+}
+.lot-row.off { opacity: .45; }
+.lot-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.lot-row-name {
+  flex: 1; background: none; border: none; color: var(--white);
+  font-size: 15px; font-weight: 600; outline: none; padding: 0;
+  min-width: 0;
+}
+.lot-row-name::placeholder { color: var(--text-sub); }
+.lot-row-name:focus { color: var(--accent); }
+
+/* Toggle switch */
+.tog { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+.tog input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-sl {
+  position: absolute; inset: 0; border-radius: 13px;
+  background: var(--text-sub); cursor: pointer; transition: background .2s;
+}
+.tog-sl::before {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; top: 3px; left: 3px;
+  transition: transform .2s;
+}
+.tog input:checked + .tog-sl { background: var(--accent); }
+.tog input:checked + .tog-sl::before { transform: translateX(18px); }
+
+.lot-del {
+  background: none; border: none; color: var(--danger);
+  font-size: 18px; cursor: pointer; padding: 2px 4px; flex-shrink: 0;
+  opacity: .7; line-height: 1;
+}
+.lot-del:active { opacity: 1; }
+
+/* add lot btn */
+.add-lot-btn {
+  width: 100%; padding: 12px; border-radius: var(--r-sm);
+  border: 1.5px dashed var(--border); background: none;
+  color: var(--text-dim); font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-top: 6px; letter-spacing: .2px;
+  transition: border-color .15s, color .15s;
+}
+.add-lot-btn:active { border-color: var(--accent); color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 18px; border-radius: var(--r-sm); border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: .2px;
+  transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-ghost   { background: var(--surface2); color: var(--white); border: 1px solid var(--border); }
+.btn-danger  { background: var(--danger); color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-sm { padding: 9px 14px; font-size: 13px; }
+.btn-xs { padding: 6px 10px; font-size: 12px; border-radius: 7px; }
+.btn-block { width: 100%; }
+
+/* ── HISTORY ── */
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filter-row select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); color: var(--white);
+  font-size: 14px; padding: 9px 12px; outline: none; cursor: pointer;
+}
+.filter-row select option { background: #001233; }
+
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.sc {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 10px 8px; text-align: center;
+}
+.sc-n { font-size: 20px; font-weight: 800; color: var(--accent); }
+.sc-l { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--r-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+thead th {
+  background: rgba(0,18,51,.7); color: var(--text-sub);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+  padding: 9px 11px; text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:nth-child(even) { background: rgba(255,255,255,.02); }
+tbody td { padding: 10px 11px; vertical-align: middle; white-space: nowrap; }
+
+.lot-pill {
+  display: inline-block; padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.edit-inp {
+  background: rgba(255,255,255,.1); border: 1.5px solid var(--accent);
+  border-radius: 6px; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 5px 7px; outline: none;
+}
+
+.rec-count { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 44px 20px; color: var(--text-dim); }
+.empty-ico  { font-size: 44px; margin-bottom: 10px; }
+.empty-ttl  { font-size: 17px; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; }
+.empty-sub  { font-size: 13px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--success); color: #fff;
+  padding: 10px 22px; border-radius: 50px;
+  font-size: 14px; font-weight: 700;
+  opacity: 0; pointer-events: none; z-index: 1000;
+  transition: all .22s; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.err  { background: var(--danger); }
+
+/* ── FLASH ── */
+.flash {
+  position: fixed; inset: 0; background: rgba(0,180,70,.15);
+  pointer-events: none; opacity: 0; z-index: 999; transition: opacity .08s;
+}
+.flash.show { opacity: 1; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--navy); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px; padding: 22px; width: 100%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.modal h3 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.modal p  { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.6; }
+.modal-acts { display: flex; gap: 8px; }
+.modal-acts .btn { flex: 1; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--navy); border-top: 1px solid var(--border);
+  padding: 12px 20px; font-size: 11px; color: var(--text-dim);
+  text-align: center; line-height: 1.7;
+}
+footer strong { color: var(--text-dim); }
+.f-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 10px; margin-top: 6px; }
+.f-step { background: var(--surface2); border-radius: 20px; padding: 3px 10px; font-size: 10px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<!-- MODAL LIMPAR -->
+<div class="modal-bg" id="clearModal">
+  <div class="modal">
+    <h3>⚠️ Limpar Dados</h3>
+    <p>Todos os registros serão apagados permanentemente. Exporte o CSV antes de continuar.</p>
+    <div class="modal-acts">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmClear()">Limpar Tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="hdr-left">
+    <span class="hdr-icon">🐄</span>
+    <div>
+      <div class="hdr-title">Pesagem de Gado</div>
+      <div class="hdr-date" id="hdrDate"></div>
+    </div>
+  </div>
+  <div class="hdr-badge" id="hdrBadge" style="display:none"></div>
+</header>
+
+<!-- TABS -->
+<nav>
+  <button class="tab on" onclick="goTab('weigh')" id="tab-weigh">
+    <span class="ti">⚖️</span>Pesagem
+  </button>
+  <button class="tab" onclick="goTab('history')" id="tab-history">
+    <span class="ti">📋</span>Histórico
+  </button>
+  <button class="tab" onclick="goTab('settings')" id="tab-settings">
+    <span class="ti">⚙️</span>Lotes
+  </button>
+</nav>
+
+<!-- ══ PESAGEM ══ -->
+<div class="screen on" id="screen-weigh">
+
+  <div class="strip">
+    <div class="st"><div class="st-n" id="stTotal">0</div><div class="st-l">Pesados</div></div>
+    <div class="st-div"></div>
+    <div class="st"><div class="st-n" id="stAvg">—</div><div class="st-l">Média kg</div></div>
+    <div class="st-div"></div>
+    <div class="st"><div class="st-n" id="stLast">—</div><div class="st-l">Último kg</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">⚖ Peso</div>
+    <div class="ig">
+      <input type="number" class="big" id="inputPeso" inputmode="decimal" placeholder="0" min="0" max="9999" autocomplete="off">
+    </div>
+    <div class="card-hd" style="margin-top:12px;">🏷 Brinco</div>
+    <div class="ig">
+      <input type="number" class="big sm" id="inputBrinco" inputmode="numeric" placeholder="—" min="0" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Selecione o Lote</div>
+    <div class="lot-grid" id="lotGrid"></div>
+    <div class="empty" id="lotGridEmpty" style="display:none;padding:20px 10px;">
+      <div style="font-size:13px;color:var(--text-dim)">Nenhum lote visível — ative lotes em <strong>Lotes</strong></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ HISTÓRICO ══ -->
+<div class="screen" id="screen-history">
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="card">
+    <div class="filter-row">
+      <select id="filterLot" onchange="renderHistory()">
+        <option value="">Todos os lotes</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="openModal()">🗑 Limpar</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:12px 14px;">
+    <div class="rec-count" id="recCount"></div>
+    <div class="tbl-wrap" id="tblWrap">
+      <div class="empty"><div class="empty-ico">📭</div><div class="empty-ttl">Sem registros</div><div class="empty-sub">Pesagens aparecerão aqui</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ LOTES (SETTINGS) ══ -->
+<div class="screen" id="screen-settings">
+
+  <div class="card">
+    <div class="card-hd">Gerenciar Lotes</div>
+    <div class="lot-mgr" id="lotMgr"></div>
+    <button class="add-lot-btn" onclick="addLot()">＋ Adicionar Lote</button>
+    <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="saveNames()">✅ Salvar Alterações</button>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Layout da Grade</div>
+    <div class="s-row">
+      <div>
+        <div class="s-lbl">Colunas na pesagem</div>
+        <div class="s-sub">Lotes visíveis são exibidos em <span id="colPreview">2</span> colunas</div>
+      </div>
+      <div class="stepper">
+        <button class="stepper-btn" onclick="changeCols(-1)">−</button>
+        <div class="stepper-v" id="colCount">2</div>
+        <button class="stepper-btn" onclick="changeCols(+1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">ℹ Sobre</div>
+    <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">Pesagem de Gado v2.0 — Dados armazenados localmente no iPad. Exporte o CSV regularmente.</p>
+  </div>
+
+</div>
+
+<footer>
+  <strong>📱 Instalar como App no iPad (Safari):</strong>
+  <div class="f-steps">
+    <span class="f-step">1. Abra no Safari</span>
+    <span class="f-step">2. Toque em □↑ Compartilhar</span>
+    <span class="f-step">3. "Adicionar à Tela de Início"</span>
+    <span class="f-step">4. Confirme → Adicionar</span>
+  </div>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+//  PALETTE (10 colours, repeats if more lots)
+// ─────────────────────────────────────────
+const PALETTE = [
+  ['#0047AB','#0065F0'],
+  ['#6A0080','#9C00BB'],
+  ['#004D25','#00792E'],
+  ['#7A3900','#B85200'],
+  ['#002060','#003DAA'],
+  ['#800029','#BB003C'],
+  ['#004D4D','#008080'],
+  ['#4A3500','#8B6300'],
+  ['#1A0066','#3300CC'],
+  ['#4D1A00','#993300'],
+];
+function lotBg(i)    { const c = PALETTE[i % PALETTE.length]; return `linear-gradient(135deg,${c[0]},${c[1]})`; }
+function lotColor(i) { return PALETTE[i % PALETTE.length][0]; }
+
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+const DEFAULTS = {
+  lots: [
+    { name:'Lote A', visible:true },
+    { name:'Lote B', visible:true },
+    { name:'Lote C', visible:true },
+  ],
+  cols: 2,
+  records: [],
+};
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem('gado_v2') || 'null');
+    if (!s) return JSON.parse(JSON.stringify(DEFAULTS));
+    // migrate old format
+    if (!s.lots && s.lotNames) {
+      s.lots = s.lotNames.slice(0, s.activeLots||3).map(n => ({ name:n, visible:true }));
+    }
+    if (!s.cols) s.cols = 2;
+    return s;
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULTS)); }
+}
+function save() { localStorage.setItem('gado_v2', JSON.stringify(state)); }
+
+let state = load();
+let editingId = null;
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+function init() {
+  const now = new Date();
+  document.getElementById('hdrDate').textContent =
+    now.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
+  renderLotGrid();
+  renderSettings();
+  updateStrip();
+  updateHdrBadge();
+  setTimeout(() => document.getElementById('inputPeso').focus(), 100);
+}
+
+// ─────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────
+function goTab(id) {
+  ['weigh','history','settings'].forEach(t => {
+    document.getElementById('screen-'+t).classList.toggle('on', t===id);
+    document.getElementById('tab-'+t).classList.toggle('on', t===id);
+  });
+  if (id==='history')  renderHistory();
+  if (id==='settings') renderSettings();
+  if (id==='weigh')    setTimeout(() => document.getElementById('inputPeso').focus(), 60);
+}
+
+// ─────────────────────────────────────────
+//  LOT GRID
+// ─────────────────────────────────────────
+function renderLotGrid() {
+  const visible = state.lots.filter(l => l.visible);
+  const grid  = document.getElementById('lotGrid');
+  const empty = document.getElementById('lotGridEmpty');
+
+  if (visible.length === 0) {
+    grid.style.display = 'none';
+    empty.style.display = '';
+    return;
+  }
+  grid.style.display = '';
+  empty.style.display = 'none';
+
+  const cols = Math.min(state.cols, visible.length);
+  grid.className = 'lot-grid ' + (['','c1','c2','c3'][cols] || 'c2');
+  grid.innerHTML = '';
+
+  visible.forEach((lot, vi) => {
+    const globalIdx = state.lots.indexOf(lot);
+    const count = state.records.filter(r => r.lot === lot.name).length;
+    const btn = document.createElement('button');
+    btn.className = 'lot-btn';
+    btn.style.background = lotBg(globalIdx);
+    btn.innerHTML = `<span>${lot.name}</span><span class="lc">${count} animais</span>`;
+    btn.addEventListener('click', () => register(lot.name, globalIdx));
+    grid.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────
+//  REGISTER
+// ─────────────────────────────────────────
+function register(lotName, lotIdx) {
+  const pesoEl   = document.getElementById('inputPeso');
+  const brincoEl = document.getElementById('inputBrinco');
+  const peso = parseFloat(pesoEl.value);
+
+  if (!pesoEl.value || isNaN(peso) || peso <= 0) {
+    toast('⚠️ Informe o Peso!', true); pesoEl.focus(); return;
+  }
+
+  const now = new Date();
+  state.records.push({
+    id:    Date.now() + Math.random(),
+    date:  now.toLocaleDateString('pt-BR'),
+    time:  now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    brinco: (brincoEl.value.trim().slice(0,6)) || '—',
+    peso,
+    lot: lotName,
+    lotIdx,
+  });
+  save();
+
+  doFlash();
+  toast(`✅ ${lotName}: ${peso} kg`);
+  pesoEl.value = ''; brincoEl.value = '';
+  pesoEl.focus();
+
+  renderLotGrid();
+  updateStrip();
+  updateHdrBadge();
+}
+
+// ─────────────────────────────────────────
+//  STRIP / BADGE
+// ─────────────────────────────────────────
+function updateStrip() {
+  const r = state.records;
+  document.getElementById('stTotal').textContent = r.length;
+  if (r.length) {
+    document.getElementById('stAvg').textContent  = (r.reduce((s,x)=>s+x.peso,0)/r.length).toFixed(0);
+    document.getElementById('stLast').textContent = r[r.length-1].peso;
+  } else {
+    document.getElementById('stAvg').textContent  = '—';
+    document.getElementById('stLast').textContent = '—';
+  }
+}
+function updateHdrBadge() {
+  const el = document.getElementById('hdrBadge');
+  if (state.records.length) { el.style.display=''; el.textContent = state.records.length + ' reg.'; }
+  else el.style.display = 'none';
+}
+
+// ─────────────────────────────────────────
+//  HISTORY
+// ─────────────────────────────────────────
+function renderHistory() {
+  // update filter
+  const sel = document.getElementById('filterLot');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos os lotes</option>';
+  state.lots.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l.name; o.textContent = l.name;
+    if (l.name === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  let recs = [...state.records].reverse();
+  if (sel.value) recs = recs.filter(r => r.lot === sel.value);
+
+  // stats
+  const sr = document.getElementById('statsRow');
+  if (recs.length) {
+    const avg = (recs.reduce((s,r)=>s+r.peso,0)/recs.length).toFixed(1);
+    const mx  = Math.max(...recs.map(r=>r.peso));
+    sr.innerHTML = `
+      <div class="sc"><div class="sc-n">${recs.length}</div><div class="sc-l">Animais</div></div>
+      <div class="sc"><div class="sc-n">${avg}</div><div class="sc-l">Média kg</div></div>
+      <div class="sc"><div class="sc-n">${mx}</div><div class="sc-l">Maior kg</div></div>`;
+  } else sr.innerHTML = '';
+
+  document.getElementById('recCount').textContent = recs.length ? `${recs.length} registro(s)` : '';
+
+  const wrap = document.getElementById('tblWrap');
+  if (!recs.length) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-ico">📭</div><div class="empty-ttl">Sem registros</div><div class="empty-sub">Pesagens aparecerão aqui</div></div>`;
+    return;
+  }
+
+  let h = `<table><thead><tr>
+    <th>#</th><th>Data</th><th>Hora</th><th>Brinco</th><th>Peso kg</th><th>Lote</th><th></th>
+  </tr></thead><tbody>`;
+
+  recs.forEach(r => {
+    const ri = state.records.findIndex(x=>x.id===r.id);
+    const num = state.records.length - ri;
+    const gi = state.lots.findIndex(l=>l.name===r.lot);
+    const col = gi>=0 ? lotColor(gi) : '#555';
+
+    if (editingId === r.id) {
+      h += `<tr>
+        <td style="color:var(--text-sub)">${num}</td>
+        <td>${r.date}</td><td>${r.time}</td>
+        <td><input type="number" class="edit-inp" id="eb-${r.id}" value="${r.brinco==='—'?'':r.brinco}" inputmode="numeric" style="width:68px"></td>
+        <td><input type="number" class="edit-inp" id="ep-${r.id}" value="${r.peso}" inputmode="decimal" style="width:75px"></td>
+        <td>
+          <select class="edit-inp" id="el-${r.id}" style="width:100px">
+            ${state.lots.map(l=>`<option value="${l.name}"${l.name===r.lot?' selected':''}>${l.name}</option>`).join('')}
+          </select>
+        </td>
+        <td style="display:flex;gap:4px;">
+          <button class="btn btn-success btn-xs" onclick="saveEdit('${r.id}')">💾</button>
+          <button class="btn btn-ghost btn-xs" onclick="cancelEdit()">✕</button>
+        </td>
+      </tr>`;
+    } else {
+      h += `<tr>
+        <td style="color:var(--text-sub)">${num}</td>
+        <td>${r.date}</td><td>${r.time}</td>
+        <td style="font-weight:700">${r.brinco}</td>
+        <td style="font-weight:800;font-size:15px">${r.peso}</td>
+        <td><span class="lot-pill" style="background:${col}">${r.lot}</span></td>
+        <td style="display:flex;gap:4px;">
+          <button class="btn btn-ghost btn-xs" onclick="startEdit('${r.id}')">✏️</button>
+          <button class="btn btn-danger btn-xs" onclick="delRec('${r.id}')">🗑</button>
+        </td>
+      </tr>`;
+    }
+  });
+
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+  if (editingId) {
+    const el = document.getElementById('ep-'+editingId);
+    if (el) el.focus();
+  }
+}
+
+function startEdit(id)  { editingId = id;   renderHistory(); }
+function cancelEdit()   { editingId = null;  renderHistory(); }
+
+function saveEdit(id) {
+  const i = state.records.findIndex(r=>String(r.id)===String(id));
+  if (i<0) return;
+  const ep = parseFloat(document.getElementById('ep-'+id).value);
+  if (isNaN(ep)||ep<=0) { toast('Peso inválido!',true); return; }
+  const eb = document.getElementById('eb-'+id).value.trim().slice(0,6);
+  const el = document.getElementById('el-'+id).value;
+  state.records[i].peso   = ep;
+  state.records[i].brinco = eb||'—';
+  state.records[i].lot    = el;
+  state.records[i].lotIdx = state.lots.findIndex(l=>l.name===el);
+  save(); editingId=null;
+  renderHistory(); updateStrip();
+  toast('✅ Registro atualizado');
+}
+
+function delRec(id) {
+  if (!confirm('Excluir este registro?')) return;
+  state.records = state.records.filter(r=>String(r.id)!==String(id));
+  save(); renderHistory(); renderLotGrid(); updateStrip(); updateHdrBadge();
+  toast('Registro excluído');
+}
+
+// ─────────────────────────────────────────
+//  SETTINGS — LOT MANAGER
+// ─────────────────────────────────────────
+function renderSettings() {
+  document.getElementById('colCount').textContent = state.cols;
+  document.getElementById('colPreview').textContent = state.cols;
+
+  const mgr = document.getElementById('lotMgr');
+  mgr.innerHTML = '';
+  state.lots.forEach((lot, i) => {
+    const row = document.createElement('div');
+    row.className = 'lot-row' + (lot.visible ? '' : ' off');
+    row.innerHTML = `
+      <div class="lot-dot" style="background:${lotColor(i)}"></div>
+      <input type="text" class="lot-row-name" id="ln-${i}" value="${lot.name}" maxlength="20" placeholder="Nome do lote">
+      <label class="tog">
+        <input type="checkbox" onchange="toggleLot(${i})" ${lot.visible?'checked':''}>
+        <span class="tog-sl"></span>
+      </label>
+      <button class="lot-del" onclick="delLot(${i})" title="Remover lote">×</button>
+    `;
+    mgr.appendChild(row);
+  });
+}
+
+function toggleLot(i) {
+  state.lots[i].visible = !state.lots[i].visible;
+  renderSettings();
+}
+
+function addLot() {
+  const idx = state.lots.length;
+  state.lots.push({ name:`Lote ${String.fromCharCode(65+idx)}`, visible:true });
+  renderSettings();
+}
+
+function delLot(i) {
+  if (state.lots.length <= 1) { toast('Mínimo 1 lote', true); return; }
+  const name = state.lots[i].name;
+  if (state.records.some(r=>r.lot===name)) {
+    if (!confirm(`O lote "${name}" tem registros. Remover mesmo assim?`)) return;
+  }
+  state.lots.splice(i,1);
+  renderSettings();
+}
+
+function saveNames() {
+  state.lots.forEach((lot, i) => {
+    const el = document.getElementById('ln-'+i);
+    if (el) lot.name = el.value.trim() || `Lote ${String.fromCharCode(65+i)}`;
+  });
+  save();
+  renderLotGrid();
+  renderHistory();
+  renderSettings();
+  toast('✅ Lotes salvos!');
+}
+
+function changeCols(d) {
+  state.cols = Math.min(3, Math.max(1, state.cols+d));
+  document.getElementById('colCount').textContent = state.cols;
+  document.getElementById('colPreview').textContent = state.cols;
+  save();
+  renderLotGrid();
+}
+
+// ─────────────────────────────────────────
+//  EXPORT
+// ─────────────────────────────────────────
+function exportCSV() {
+  if (!state.records.length) { toast('Nenhum dado para exportar',true); return; }
+  const sel = document.getElementById('filterLot').value;
+  let recs = state.records;
+  if (sel) recs = recs.filter(r=>r.lot===sel);
+  const bom = '\uFEFF';
+  const hd  = 'N°,Data,Hora,Brinco,Peso (kg),Lote\n';
+  const rows = recs.map((r,i)=>`${i+1},"${r.date}","${r.time}","${r.brinco}",${r.peso},"${r.lot}"`).join('\n');
+  const blob = new Blob([bom+hd+rows],{type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `pesagem_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('📥 CSV exportado!');
+}
+
+// ─────────────────────────────────────────
+//  MODAL
+// ─────────────────────────────────────────
+function openModal()  { document.getElementById('clearModal').classList.add('show'); }
+function closeModal() { document.getElementById('clearModal').classList.remove('show'); }
+function confirmClear() {
+  state.records = []; save(); editingId = null;
+  closeModal();
+  renderLotGrid(); updateStrip(); updateHdrBadge(); renderHistory();
+  toast('🗑 Dados limpos');
+}
+
+// ─────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────
+function doFlash() {
+  const el = document.getElementById('flash');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 180);
+}
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (err?' err':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+document.getElementById('inputPeso').addEventListener('keydown', e => {
+  if (e.key==='Enter') document.getElementById('inputBrinco').focus();
+});
+document.getElementById('inputBrinco').addEventListener('keydown', e => {
+  if (e.key==='Enter') document.getElementById('inputPeso').focus();
+});
+document.getElementById('inputBrinco').addEventListener('input', function() {
+  if (this.value.length>6) this.value=this.value.slice(0,6);
+});
+
+init();
+</script>
+</body>
+</html>
